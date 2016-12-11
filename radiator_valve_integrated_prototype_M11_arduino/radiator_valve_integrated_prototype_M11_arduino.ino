@@ -252,11 +252,16 @@ void TC3_Handler()
   if (!valveTouched) {
     if (absoluteAngle < setAngle - boundaryValue) {
       forceClockwise = true;
-      force = 0.75;
+      force = (setAngle - absoluteAngle) * 0.025;
+//      if (setAngle - absoluteAngle < (10*PI)){                                      <<< why does this not work??
+//      force = 0.5 * sin(((setAngle - absoluteAngle)/10)+(0.5*PI)) + 0.5 ;
+//      } else {
+//       force = 1; 
+//      }
     }
     else if (absoluteAngle > setAngle + boundaryValue) {
       forceClockwise = false;
-      force = 0.75;
+      force = (absoluteAngle - setAngle) * 0.025;
     }
     else {
       force = 0;
