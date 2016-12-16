@@ -43,6 +43,7 @@
        The failure to exercise any right provided in this Agreement shall not be a waiver of prior or subsequent rights.
   ----------------------------------------------------------------------------------------------------------------------------------------------*/
 
+
 //setmotorDriverpins
 #define IN1 6
 #define IN2 7
@@ -94,24 +95,38 @@ byte byteCounter = 0;
    Alex' variables
   ----------------------------------------------------------------------------------------------------------------------------------------------*/
 
+
+//motor
 int fsrPin = A0;     // the FSR and 10K pulldown are connected to a0
 int fsrReading;     // the analog reading from the FSR resistor divider
 int valveTemperature;
 float decimalValveTemperature;
 float desiredTemperature;
-//float sustainabilityTemperature = 100;
-//float desiredAbsoluteAngle;
-//float minAngle = 0;
-//float maxAngle = 120;
 float boundaryValue = 5; // how much may the angle be off when setting it beck to previouse desired angle on both ends (so 30 + 3 or - 3, for instance)
-//boolean previouselyDesiredTemperature = false;
-//boolean DesiredValueSet = false;
 boolean valveTouched = false;
 boolean buttonPressed = false;
-//boolean valveSetBack = false;
-
 float setAngle = 0;
 
+////led ring
+#include <Adafruit_NeoPixel.h>
+
+#define PIN 3
+
+// Parameter 1 = number of pixels in strip
+// Parameter 2 = pin number (most are valid)
+// Parameter 3 = pixel type flags, add together as needed:
+//   NEO_KHZ800  800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
+//   NEO_KHZ400  400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
+//   NEO_GRB     Pixels are wired for GRB bitstream (most NeoPixel products)
+//   NEO_RGB     Pixels are wired for RGB bitstream (v1 FLORA pixels, not v2)
+Adafruit_NeoPixel strip = Adafruit_NeoPixel(60, PIN, NEO_GRB + NEO_KHZ800);
+    
+
+
+int whiteValue = 0;
+int redValue = 0;
+int greenValue = 0;
+int blueValue = 0;
 
 
 
@@ -173,6 +188,16 @@ void setup() {
     LUTforce[i] = 1;      // array om te zeggen dat 0-360 geen kracht heeft
     LUTclockwise[i] = 0;
   }
+
+
+  /*----------------------------------------------------------------------------------------------------------------------------------------------
+     Alex' Addition to SetUp function
+    ----------------------------------------------------------------------------------------------------------------------------------------------*/
+  // led ring setup
+//  strip.begin();
+//  strip.show(); // Initialize all pixels to 'off'
+
+
 }
 
 
@@ -187,11 +212,34 @@ void setup() {
   ----------------------------------------------------------------------------------------------------------------------------------------------*/
 void loop() {
 
+  
+//  while(Serial.read() != 'A') {}
+//  while(!Serial.available()) {}
+//  char valve = Serial.read();
+//  
+//  while (Serial.read() != '$') {}
+//  while(!Serial.available()) {}
+//  char brightness = Serial.read();
+
+
+  // temperature mapping
   valveTemperature = map(absoluteAngle, 60, 120, 180, 250);
   decimalValveTemperature = valveTemperature / 10;
 
+  // touch sensor
   readFsr();
 
+
+  // led lights
+//  for (int i = 0; i < 16; i++) {
+//    strip.setPixelColor(i, redValue, greenValue, blueValue, whiteValue);
+//  }
+//
+//  strip.show();
+
+
+
+  //debugging
   Serial.print("speedFactor = ");
   Serial.print(speedFactor);
   Serial.print("\t");
@@ -208,7 +256,7 @@ void loop() {
   Serial.print(setAngle);
   Serial.print("\t");
   Serial.print("valveTouched = ");
-  Serial.println(valveTouched);  
+  Serial.println(valveTouched);
   delay(5);
 }
 
@@ -225,6 +273,7 @@ void readFsr() {
   }
   if (fsrReading > 1000) {
     buttonPressed = true;
+//    redValue = 225;
   } else {
     buttonPressed = false;
   }
@@ -253,11 +302,11 @@ void TC3_Handler()
     if (absoluteAngle < setAngle - boundaryValue) {
       forceClockwise = true;
       force = (setAngle - absoluteAngle) * 0.025;
-//      if (setAngle - absoluteAngle < (10*PI)){                                      <<< why does this not work??
-//      force = 0.5 * sin(((setAngle - absoluteAngle)/10)+(0.5*PI)) + 0.5 ;
-//      } else {
-//       force = 1; 
-//      }
+      //      if (setAngle - absoluteAngle < (10*PI)){                                      <<< why does this not work??
+      //      force = 0.5 * sin(((setAngle - absoluteAngle)/10)+(0.5*PI)) + 0.5 ;
+      //      } else {
+      //       force = 1;
+      //      }
     }
     else if (absoluteAngle > setAngle + boundaryValue) {
       forceClockwise = false;
@@ -267,18 +316,18 @@ void TC3_Handler()
       force = 0;
     }
   } else if (valveTouched) {
-      if (clockwise) {
-          forceClockwise = false;
-        }
-        else if (!clockwise) {
-          forceClockwise = true;
-      }
-      force = abs(speedFactor) / 120; //adding resistance depending if movement is detected // 120 was used often
-      if (buttonPressed) {
-        setAngle = absoluteAngle;
-        desiredTemperature = decimalValveTemperature; 
-      }
+    if (clockwise) {
+      forceClockwise = false;
     }
+    else if (!clockwise) {
+      forceClockwise = true;
+    }
+    force = abs(speedFactor) / 120; //adding resistance depending if movement is detected // 120 was used often
+    if (buttonPressed) {
+      setAngle = absoluteAngle;
+      desiredTemperature = decimalValveTemperature;
+    }
+  }
 
   if (force > 1) {
     force = 1; // force may never be bigger than 1
