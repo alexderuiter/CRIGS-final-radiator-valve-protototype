@@ -94,6 +94,28 @@ byte byteCounter = 0;
 /*----------------------------------------------------------------------------------------------------------------------------------------------
    Alex' variables
   ----------------------------------------------------------------------------------------------------------------------------------------------*/
+//screen
+//screen
+const int screenDataPin  = 2;
+const int screenClockPin = 3;
+
+byte zero  = B01111110;
+byte one   = B00000110;
+byte two   = B11011010;
+byte three = B11010110;
+byte four  = B10100110;
+byte five  = B11110100;
+byte six   = B11111100;
+byte seven = B01000110;
+byte eight = B11111110;
+byte nine  = B11110110;
+byte dot   = B00000001;
+
+byte numbers[] = {zero, one, two, three, four, five, six, seven, eight, nine};
+
+byte firstNumber = zero;
+byte secondNumber = zero;
+byte thirdNumber = zero;
 
 
 //motor
@@ -108,9 +130,9 @@ boolean buttonPressed = false;
 float setAngle = 0;
 
 ////led ring
-#include <Adafruit_NeoPixel.h>
+//#include <Adafruit_NeoPixel.h>
 
-#define PIN 3
+//#define PIN 3
 
 // Parameter 1 = number of pixels in strip
 // Parameter 2 = pin number (most are valid)
@@ -119,7 +141,7 @@ float setAngle = 0;
 //   NEO_KHZ400  400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
 //   NEO_GRB     Pixels are wired for GRB bitstream (most NeoPixel products)
 //   NEO_RGB     Pixels are wired for RGB bitstream (v1 FLORA pixels, not v2)
-Adafruit_NeoPixel strip = Adafruit_NeoPixel(60, PIN, NEO_GRB + NEO_KHZ800);
+//Adafruit_NeoPixel strip = Adafruit_NeoPixel(60, PIN, NEO_GRB + NEO_KHZ800);
     
 
 
@@ -197,6 +219,9 @@ void setup() {
 //  strip.begin();
 //  strip.show(); // Initialize all pixels to 'off'
 
+//screen
+  pinMode(screenClockPin, OUTPUT); // make the clockPin pin an output
+  pinMode(screenDataPin , OUTPUT); // make the data pin an output3
 
 }
 
@@ -223,11 +248,21 @@ void loop() {
 
 
   // temperature mapping
-  valveTemperature = map(absoluteAngle, 60, 120, 180, 250);
+  valveTemperature = map(absoluteAngle, 100, 200, 0, 300);
   decimalValveTemperature = valveTemperature / 10;
 
   // touch sensor
   readFsr();
+
+
+  // display
+   thirdNumber = numbers[valveTemperature % sizeof(numbers)];
+   secondNumber = numbers[(valveTemperature/10) % sizeof(numbers)];
+   firstNumber = numbers[(valveTemperature/100) % sizeof(numbers)];
+   shiftOut(screenDataPin, screenClockPin, LSBFIRST, thirdNumber);
+   shiftOut(screenDataPin, screenClockPin, LSBFIRST, secondNumber | dot);
+   shiftOut(screenDataPin, screenClockPin, LSBFIRST, firstNumber);
+   delay(50);
 
 
   // led lights
